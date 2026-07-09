@@ -407,10 +407,12 @@
             <canvas class="waveform" id="waveform"></canvas>
             <audio id="audioPlayer" controls style="display:none; margin-top:15px; width:100%;"></audio>
 
-            </div>
+            <div class="divider">— 或者手动输入 —</div>
+            <textarea id="manualAnswer" placeholder="如果无法录音，可以在这里手动输入你的回答..."></textarea>
+        </div>
 
         <!-- 提交 -->
-        <button class="btn btn-success" id="submitBtn" onclick="submitAnswer()" disabled>
+        <button class="btn btn-success" id="submitBtn" onclick="submitAnswer()">
             ✨ 提交评分
         </button>
 
@@ -506,6 +508,8 @@
                     const randomIdx = Math.floor(Math.random() * data.questions.length);
                     select.value = `q${randomIdx}`;
                     updateQuestion();
+                    // 题目加载完成后启用提交按钮
+                    document.getElementById('submitBtn').disabled = false;
                 }
             } catch (err) {
                 console.error('加载题目失败', err);
@@ -516,9 +520,12 @@
         function updateQuestion() {
             const select = document.getElementById('questionSelect');
             const textarea = document.getElementById('question');
+            const submitBtn = document.getElementById('submitBtn');
 
             if (select.selectedIndex >= 0) {
                 textarea.value = select.options[select.selectedIndex].text;
+                // 选了题目后启用提交按钮
+                submitBtn.disabled = false;
             }
         }
 
