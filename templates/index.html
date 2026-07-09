@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSKK AI口语评分系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid #e8e8e8;
+        }
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover { background: #5a6fd6; transform: translateY(-2px); }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-success {
+            background: #27ae60;
+            color: white;
+            width: 100%;
+            padding: 16px;
+            font-size: 17px;
+            margin-top: 15px;
+        }
+        .btn-success:hover { background: #219a52; }
+        .btn-success:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .record-btn {
+            width: 100%;
+            padding: 18px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .record-btn:hover { background: #5a6fd6; }
+        .record-btn.recording {
+            background: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+            50% { transform: scale(1.02); box-shadow: 0 0 20px 10px rgba(231, 76, 60, 0); }
+        }
+        .timer {
+            text-align: center;
+            font-size: 32px;
+            color: #e74c3c;
+            margin: 15px 0;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        .waveform {
+            width: 100%;
+            height: 80px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin-top: 10px;
+            display: none;
+        }
+        .divider {
+            text-align: center;
+            margin: 15px 0;
+            color: #999;
+            font-size: 13px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result-box {
+            display: none;
+            margin-top: 25px;
+            padding: 25px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            border-radius: 15px;
+            border-left: 5px solid #27ae60;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .total-score {
+            text-align: center;
+            font-size: 56px;
+            color: #27ae60;
+            font-weight: bold;
+            margin: 15px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .score-item {
+            background: white;
+            padding: 15px 10px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+        .score-item:hover { transform: translateY(-3px); }
+        .score-item .label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .score-item .score {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .score-item .comment {
+            font-size: 11px;
+            color: #888;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+        .transcript-box {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #ff9800;
+        }
+        .transcript-box strong {
+            color: #e65100;
+            font-size: 13px;
+        }
+        .transcript-box p {
+            margin-top: 8px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .improvements {
+            background: #ffebee;
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        .improvements h3 {
+            color: #c62828;
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+        .improvements ul {
+            padding-left: 20px;
+        }
+        .improvements li {
+            margin-bottom: 8px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .practice-suggestion {
+            margin-top: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            color: #555;
+            line-height: 1.6;
+            border-left: 3px solid #667eea;
+        }
+        .share-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .share-btns .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+        .history-section {
+            margin-top: 30px;
+        }
+        .history-item {
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .history-item:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+        .history-info {
+            flex: 1;
+        }
+        .history-level {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 14px;
+        }
+        .history-date {
+            font-size: 12px;
+            color: #999;
+            margin-top: 3px;
+        }
+        .history-question {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 300px;
+        }
+        .history-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #aaa;
+        }
+        .empty-state svg {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        .level-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .badge-初级 { background: #c8e6c9; color: #2e7d32; }
+        .badge-中级 { background: #fff9c4; color: #f57f17; }
+        .badge-高级 { background: #ffcdd2; color: #c62828; }
+        .assessment-box {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 16px;
+            color: #555;
+        }
+        .assessment-box .pass {
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        .assessment-box .fail {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 22px; }
+            .score-grid { grid-template-columns: repeat(2, 1fr); }
+            .total-score { font-size: 42px; }
+            .history-question { max-width: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 HSKK AI口语评分系统</h1>
+        <p class="subtitle">完全免费 · 即时评分 · AI智能分析 · 历史记录</p>
+
+        <!-- 选择级别 -->
+        <div class="section">
+            <h2>📋 1. 选择考试级别</h2>
+            <select id="level">
+                <option value="初级">HSKK 初级</option>
+                <option value="中级" selected>HSKK 中级</option>
+                <option value="高级">HSKK 高级</option>
+            </select>
+        </div>
+
+        <!-- 题目选择 -->
+        <div class="section">
+            <h2>📝 2. 选择考试题目</h2>
+            <button class="btn btn-primary btn-small" onclick="loadQuestions()">
+                🔄 换一批题目
+            </button>
+            <select id="questionSelect" onchange="updateQuestion()">
+                <option value="">正在加载题目...</option>
+            </select>
+            <textarea id="question" placeholder="选择题目或自定义输入..."></textarea>
+        </div>
+
+        <!-- 录音区域 -->
+        <div class="section">
+            <h2>🎙️ 3. 录音回答</h2>
+            <button class="record-btn" id="recordBtn" onclick="toggleRecording()">
+                <span id="recordIcon">🎤</span>
+                <span id="recordText">点击开始录音</span>
+            </button>
+
+            <div class="timer" id="timer" style="display:none;">00:00</div>
+            <canvas class="waveform" id="waveform"></canvas>
+            <audio id="audioPlayer" controls style="display:none; margin-top:15px; width:100%;"></audio>
+
+            <div class="divider">— 或者手动输入 —</div>
+            <textarea id="manualAnswer" placeholder="如果无法录音，可以在这里手动输入你的回答..."></textarea>
+        </div>
+
+        <!-- 提交 -->
+        <button class="btn btn-success" id="submitBtn" onclick="submitAnswer()" disabled>
+            ✨ 提交评分
+        </button>
+
+        <!-- 加载中 -->
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>AI正在评分中，请稍候...</p>
+        </div>
+
+        <!-- 结果展示 -->
+        <div class="result-box" id="resultBox">
+            <h2 style="text-align:center; color:#27ae60; margin-bottom:5px;">📊 评分结果</h2>
+
+            <div class="transcript-box" id="transcriptBox">
+                <strong>📝 语音识别结果：</strong>
+                <p id="transcriptText"></p>
+            </div>
+
+            <div class="total-score" id="totalScore"></div>
+            <div class="level-badge" id="levelBadge"></div>
+
+            <div class="assessment-box" id="assessmentBox"></div>
+
+            <div class="score-grid" id="scoreGrid"></div>
+
+            <div class="improvements" id="improvementsBox">
+                <h3>🔧 改进建议</h3>
+                <ul id="improvementsList"></ul>
+                <div class="practice-suggestion" id="practiceSuggestion"></div>
+            </div>
+
+            <div class="share-btns">
+                <button class="btn btn-primary" onclick="copyResult()">📋 复制成绩</button>
+                <button class="btn btn-primary" onclick="shareImage()">🖼️ 生成图片</button>
+                <button class="btn btn-danger" onclick="retake()">🔄 重新考试</button>
+            </div>
+        </div>
+
+        <!-- 历史记录 -->
+        <div class="section history-section">
+            <h2>📚 历史成绩 <span style="font-size:13px; color:#999; font-weight:normal;">（保存在本地浏览器）</span></h2>
+            <div id="historyBox">
+                <div class="empty-state">
+                    <p>暂无历史记录</p>
+                </div>
+            </div>
+            <button class="btn btn-danger btn-small" onclick="clearHistory()" style="margin-top:10px;">
+                🗑️ 清空历史
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBlob = null;
+        let isRecording = false;
+        let recordingTimer;
+        let recordingSeconds = 0;
+        let audioContext;
+        let analyser;
+        let dataArray;
+        let currentResult = null;
+
+        // 页面加载
+        window.onload = function() {
+            loadQuestions();
+            displayHistory();
+            document.getElementById('level').addEventListener('change', loadQuestions);
+        };
+
+        // ========== 加载题目 ==========
+        async function loadQuestions() {
+            const level = document.getElementById('level').value;
+            const select = document.getElementById('questionSelect');
+
+            select.innerHTML = '<option value="">正在加载题目...</option>';
+
+            try {
+                const res = await fetch(`/api/questions/${level}`);
+                const data = await res.json();
+
+                select.innerHTML = '';
+                data.questions.forEach((q, i) => {
+                    const option = document.createElement('option');
+                    option.value = `q${i}`;
+                    option.textContent = q;
+                    select.appendChild(option);
+                });
+
+                // 随机选一道题
+                if (data.questions.length > 0) {
+                    const randomIdx = Math.floor(Math.random() * data.questions.length);
+                    select.value = `q${randomIdx}`;
+                    updateQuestion();
+                }
+            } catch (err) {
+                console.error('加载题目失败', err);
+                select.innerHTML = '<option value="custom">✏️ 自定义题目（加载失败）</option>';
+            }
+        }
+
+        function updateQuestion() {
+            const select = document.getElementById('questionSelect');
+            const textarea = document.getElementById('question');
+
+            if (select.selectedIndex >= 0) {
+                textarea.value = select.options[select.selectedIndex].text;
+            }
+        }
+
+        // ========== 录音功能 ==========
+        async function toggleRecording() {
+            const btn = document.getElementById('recordBtn');
+            const icon = document.getElementById('recordIcon');
+            const text = document.getElementById('recordText');
+            const player = document.getElementById('audioPlayer');
+            const timer = document.getElementById('timer');
+            const canvas = document.getElementById('waveform');
+
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                    // 音频分析器
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioContext.createMediaStreamSource(stream);
+                    analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 256;
+                    source.connect(analyser);
+                    dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+                    canvas.style.display = 'block';
+                    drawWaveform();
+
+                    // 计时器
+                    recordingSeconds = 0;
+                    timer.style.display = 'block';
+                    updateTimer();
+                    recordingTimer = setInterval(updateTimer, 1000);
+
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (e) => {
+                        audioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        clearInterval(recordingTimer);
+                        timer.style.display = 'none';
+                        canvas.style.display = 'none';
+                        if (audioContext) audioContext.close();
+
+                        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        player.src = audioUrl;
+                        player.style.display = 'block';
+                        document.getElementById('submitBtn').disabled = false;
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    icon.textContent = '⏹';
+                    text.textContent = '点击停止录音';
+                    btn.classList.add('recording');
+
+                } catch (err) {
+                    alert('无法访问麦克风，请检查权限设置或手动输入答案。');
+                    console.error(err);
+                }
+            } else {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                icon.textContent = '🎤';
+                text.textContent = '重新录音';
+                btn.classList.remove('recording');
+            }
+        }
+
+        function updateTimer() {
+            recordingSeconds++;
+            const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+            const secs = (recordingSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${mins}:${secs}`;
+
+            if (recordingSeconds >= 180) {
+                toggleRecording();
+                alert('录音已达到3分钟上限，已自动停止。');
+            }
+        }
+
+        function drawWaveform() {
+            if (!isRecording) return;
+
+            const canvas = document.getElementById('waveform');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            analyser.getByteFrequencyData(dataArray);
+
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const barWidth = (canvas.width / dataArray.length) * 2.5;
+            let x = 0;
+
+            for (let i = 0; i < dataArray.length; i++) {
+                const barHeight = dataArray[i] / 2;
+                const r = barHeight + 100;
+                const g = 50;
+                const b = 200;
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                x += barWidth + 1;
+            }
+
+            requestAnimationFrame(drawWaveform);
+        }
+
+        // ========== 提交评分 ==========
+        async function submitAnswer() {
+            const loading = document.getElementById('loading');
+            const resultBox = document.getElementById('resultBox');
+            const submitBtn = document.getElementById('submitBtn');
+
+            const question = document.getElementById('question').value.trim();
+            const level = document.getElementById('level').value;
+            const manualAnswer = document.getElementById('manualAnswer').value.trim();
+
+            if (!question) {
+                alert('请先选择或输入题目！');
+                return;
+            }
+
+            loading.style.display = 'block';
+            resultBox.style.display = 'none';
+            submitBtn.disabled = true;
+
+            let answerText = manualAnswer;
+
+            // 语音转文字
+            if (audioBlob && !manualAnswer) {
+                try {
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.wav');
+
+                    const transcribeRes = await fetch('/api/transcribe', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const transcribeData = await transcribeRes.json();
+
+                    if (transcribeData.success) {
+                        answerText = transcribeData.text;
+                        document.getElementById('transcriptText').textContent = answerText;
+                    } else {
+                        throw new Error(transcribeData.error || '语音识别失败');
+                    }
+                } catch (err) {
+                    alert('语音识别失败：' + err.message + '\n请手动输入答案。');
+                    loading.style.display = 'none';
+                    submitBtn.disabled = false;
+                    return;
+                }
+            } else {
+                document.getElementById('transcriptText').textContent = answerText || '（手动输入）';
+            }
+
+            if (!answerText.trim()) {
+                alert('请输入或录制你的回答！');
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // AI评分
+            try {
+                const gradeRes = await fetch('/api/grade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: question,
+                        answer: answerText,
+                        level: level
+                    })
+                });
+
+                const gradeData = await gradeRes.json();
+
+                if (gradeData.success) {
+                    currentResult = {
+                        level: level,
+                        question: question,
+                        answer: answerText,
+                        total: gradeData.grading.total,
+                        grading: gradeData.grading,
+                        date: new Date().toLocaleString('zh-CN')
+                    };
+                    displayResults(gradeData.grading);
+                    saveResult(currentResult);
+                } else {
+                    throw new Error(gradeData.error || '评分失败');
+                }
+            } catch (err) {
+                alert('评分失败：' + err.message);
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+
+        // ========== 展示结果 ==========
+        function displayResults(grading) {
+            const resultBox = document.getElementById('resultBox');
+            const scoreGrid = document.getElementById('scoreGrid');
+            const improvementsList = document.getElementById('improvementsList');
+            const level = document.getElementById('level').value;
+
+            let data = grading;
+            if (typeof grading === 'string') {
+                data = JSON.parse(grading);
+            }
+
+            // 总分
+            document.getElementById('totalScore').textContent = data.total + '分';
+
+            // 级别徽章
+            const badge = document.getElementById('levelBadge');
+            badge.textContent = 'HSKK ' + level;
+            badge.className = 'level-badge badge-' + level;
+
+            // 通过评估
+            const assessmentBox = document.getElementById('assessmentBox');
+            const isPass = data.total >= 60;
+            assessmentBox.innerHTML = isPass 
+                ? `<span class="pass">✅ ${data.level_assessment || '有望通过该级别考试'}</span>`
+                : `<span class="fail">⚠️ ${data.level_assessment || '需要加强练习'}</span>`;
+
+            // 各项分数
+            const dimensions = [
+                { key: 'pronunciation', label: '发音准确度', icon: '🗣️' },
+                { key: 'grammar', label: '语法正确性', icon: '📝' },
+                { key: 'vocabulary', label: '词汇运用', icon: '📖' },
+                { key: 'fluency', label: '流利度', icon: '💬' },
+                { key: 'content', label: '内容完整度', icon: '📋' }
+            ];
+
+            scoreGrid.innerHTML = dimensions.map(d => `
+                <div class="score-item">
+                    <div class="label">${d.icon} ${d.label}</div>
+                    <div class="score">${data[d.key].score}</div>
+                    <div class="comment">${data[d.key].comment}</div>
+                </div>
+            `).join('');
+
+            // 改进建议
+            const improvements = data.improvements || [];
+            improvementsList.innerHTML = improvements.map(i => `<li>${i}</li>`).join('');
+            document.getElementById('practiceSuggestion').textContent = data.practice_suggestions || '';
+
+            resultBox.style.display = 'block';
+            resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ========== 分享功能 ==========
+        function copyResult() {
+            if (!currentResult) return;
+            const data = currentResult.grading;
+            const text = `🎯 HSKK AI口语评分结果\n\n` +
+                `级别：HSKK ${currentResult.level}\n` +
+                `总分：${data.total}分\n\n` +
+                `📊 各项得分：\n` +
+                `• 发音准确度：${data.pronunciation.score}分\n` +
+                `• 语法正确性：${data.grammar.score}分\n` +
+                `• 词汇运用：${data.vocabulary.score}分\n` +
+                `• 流利度：${data.fluency.score}分\n` +
+                `• 内容完整度：${data.content.score}分\n\n` +
+                `🔧 改进建议：${data.improvements.join('；')}\n\n` +
+                `来自 HSKK AI口语评分系统`;
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert('成绩已复制到剪贴板！');
+            }).catch(() => {
+                alert('复制失败，请手动复制。');
+            });
+        }
+
+        function shareImage() {
+            alert('图片生成功能开发中！\n你可以先使用"复制成绩"功能分享文字版结果。');
+        }
+
+        function retake() {
+            document.getElementById('resultBox').style.display = 'none';
+            document.getElementById('manualAnswer').value = '';
+            document.getElementById('audioPlayer').style.display = 'none';
+            audioBlob = null;
+            document.getElementById('submitBtn').disabled = true;
+            loadQuestions();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ========== 历史记录 ==========
+        function saveResult(result) {
+            let history = JSON.parse(localStorage.getItem('hskk_history') || '[]');
+            history.unshift(result);
+            if (history.length > 50) history = history.slice(0, 50);
+            localStorage.setItem('hskk_history', JSON.stringify(history));
+            displayHistory();
+        }
+
+        function displayHistory() {
+            const history = JSON.parse(localStorage.getItem('hskk_history') || '[]');
+            const historyBox = document.getElementById('historyBox');
+
+            if (history.length === 0) {
+                historyBox.innerHTML = `
+                    <div class="empty-state">
+                        <p>📭 暂无历史记录</p>
+                        <p style="font-size:12px; margin-top:5px;">完成一次评分后，记录将自动保存</p>
+                    </div>`;
+                return;
+            }
+
+            historyBox.innerHTML = history.map((item, i) => `
+                <div class="history-item" onclick="viewHistoryDetail(${i})" style="cursor:pointer;">
+                    <div class="history-info">
+                        <div class="history-level">HSKK ${item.level} <span class="level-badge badge-${item.level}">${item.level}</span></div>
+                        <div class="history-date">${item.date}</div>
+                        <div class="history-question">${item.question}</div>
+                    </div>
+                    <div class="history-score">${item.total}分</div>
+                </div>
+            `).join('');
+        }
+
+        function viewHistoryDetail(index) {
+            const history = JSON.parse(localStorage.getItem('hskk_history') || '[]');
+            const item = history[index];
+            if (item) {
+                document.getElementById('level').value = item.level;
+                document.getElementById('question').value = item.question;
+                document.getElementById('manualAnswer').value = item.answer;
+                currentResult = item;
+                displayResults(item.grading);
+            }
+        }
+
+        function clearHistory() {
+            if (confirm('确定要清空所有历史记录吗？此操作不可恢复。')) {
+                localStorage.removeItem('hskk_history');
+                displayHistory();
+            }
+        }
+    </script>
+</body>
+</html>
