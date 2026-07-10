@@ -1,5 +1,9 @@
 flask==3.0.0
 flask-cors==4.0.0
+<<<<<<< HEAD
 requests==2.31.0
+=======
+openai==1.6.0
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
 python-dotenv==1.0.0
 gunicorn==21.2.0

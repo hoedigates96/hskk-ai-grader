@@ -1,12 +1,17 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import os
+<<<<<<< HEAD
 import requests
 import json
 import hashlib
 import base64
 import hmac
 from datetime import datetime
+=======
+import openai
+import json
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,11 +19,15 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
+<<<<<<< HEAD
 # ========== API密钥配置 ==========
 KIMI_API_KEY = os.getenv('KIMI_API_KEY')
 XUNFEI_APP_ID = os.getenv('XUNFEI_APP_ID')
 XUNFEI_API_KEY = os.getenv('XUNFEI_API_KEY')
 XUNFEI_API_SECRET = os.getenv('XUNFEI_API_SECRET')
+=======
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
 
 # ========== 扩展题库 ==========
 HSKK_QUESTIONS = {
@@ -68,7 +77,11 @@ def get_questions(level):
     questions = HSKK_QUESTIONS.get(level, [])
     return jsonify({'questions': questions})
 
+<<<<<<< HEAD
 # ========== 讯飞语音转文字 ==========
+=======
+# ========== 语音转文字 ==========
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
 @app.route('/api/transcribe', methods=['POST'])
 def transcribe_audio():
     if 'audio' not in request.files:
@@ -77,6 +90,7 @@ def transcribe_audio():
     audio_file = request.files['audio']
 
     try:
+<<<<<<< HEAD
         # 读取音频文件内容
         audio_file.seek(0)
         audio_data = audio_file.read()
@@ -92,10 +106,25 @@ def transcribe_audio():
             })
         else:
             return jsonify({'error': '语音识别失败：' + str(result)}), 500
+=======
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
+        transcription = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file,
+            language="zh"
+        )
+
+        return jsonify({
+            'success': True,
+            'text': transcription.text
+        })
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+<<<<<<< HEAD
 def xunfei_asr(audio_data):
     """讯飞语音听写API"""
     url = "https://iat-api.xfyun.cn/v2/iat"
@@ -142,6 +171,9 @@ GET /v2/iat "HTTP/1.1".format(date)
     return response.json()
 
 # ========== Kimi AI评分 ==========
+=======
+# ========== AI评分 ==========
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
 @app.route('/api/grade', methods=['POST'])
 def grade_speaking():
     data = request.json
@@ -175,6 +207,7 @@ def grade_speaking():
     "practice_suggestions": "具体练习建议"
 }}"""
 
+<<<<<<< HEAD
     headers = {
         'Authorization': f'Bearer {KIMI_API_KEY}',
         'Content-Type': 'application/json'
@@ -218,6 +251,24 @@ def grade_speaking():
         return jsonify({
             'success': True,
             'grading': grading
+=======
+    try:
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "你是HSKK专业评分考官，严格按官方标准评分。"},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            response_format={"type": "json_object"}
+        )
+
+        result = response.choices[0].message.content
+        return jsonify({
+            'success': True,
+            'grading': json.loads(result)
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
         })
 
     except Exception as e:

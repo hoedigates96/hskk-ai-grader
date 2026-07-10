@@ -407,7 +407,12 @@
             <canvas class="waveform" id="waveform"></canvas>
             <audio id="audioPlayer" controls style="display:none; margin-top:15px; width:100%;"></audio>
 
+<<<<<<< HEAD
             <!-- 仅支持口语录音，已移除手动输入 -->
+=======
+            <div class="divider">— 或者手动输入 —</div>
+            <textarea id="manualAnswer" placeholder="如果无法录音，可以在这里手动输入你的回答..."></textarea>
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
         </div>
 
         <!-- 提交 -->
@@ -647,6 +652,7 @@
 
             const question = document.getElementById('question').value.trim();
             const level = document.getElementById('level').value;
+<<<<<<< HEAD
 
             if (!question) {
                 alert('请先选择题目！');
@@ -655,6 +661,12 @@
 
             if (!audioBlob) {
                 alert('请先录音！');
+=======
+            const manualAnswer = document.getElementById('manualAnswer').value.trim();
+
+            if (!question) {
+                alert('请先选择或输入题目！');
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
                 return;
             }
 
@@ -662,10 +674,17 @@
             resultBox.style.display = 'none';
             submitBtn.disabled = true;
 
+<<<<<<< HEAD
             let answerText = '';
 
             // 语音转文字
             if (audioBlob) {
+=======
+            let answerText = manualAnswer;
+
+            // 语音转文字
+            if (audioBlob && !manualAnswer) {
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
                 try {
                     const formData = new FormData();
                     formData.append('audio', audioBlob, 'recording.wav');
@@ -688,10 +707,19 @@
                     submitBtn.disabled = false;
                     return;
                 }
+<<<<<<< HEAD
             }
 
             if (!answerText || !answerText.trim()) {
                 alert('语音识别失败，请重新录音！');
+=======
+            } else {
+                document.getElementById('transcriptText').textContent = answerText || '（手动输入）';
+            }
+
+            if (!answerText.trim()) {
+                alert('请输入或录制你的回答！');
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
                 loading.style.display = 'none';
                 submitBtn.disabled = false;
                 return;
@@ -815,7 +843,11 @@
 
         function retake() {
             document.getElementById('resultBox').style.display = 'none';
+<<<<<<< HEAD
             // 已移除手动输入功能
+=======
+            document.getElementById('manualAnswer').value = '';
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
             document.getElementById('audioPlayer').style.display = 'none';
             audioBlob = null;
             document.getElementById('submitBtn').disabled = true;
@@ -863,7 +895,11 @@
             if (item) {
                 document.getElementById('level').value = item.level;
                 document.getElementById('question').value = item.question;
+<<<<<<< HEAD
                 // 已移除手动输入，不恢复答案文本
+=======
+                document.getElementById('manualAnswer').value = item.answer;
+>>>>>>> f2c5cfc915817f366b55a98de19e19fb7ae296f2
                 currentResult = item;
                 displayResults(item.grading);
             }

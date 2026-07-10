@@ -1,0 +1,12 @@
+<<<<<<< HEAD
+.env
+venv/
+__pycache__/
+*.pyc
+=======
+.env
+venv/
+__pycache__/
+*.pyc
+>>>>>>> fafd9670b300021df139a9bdf509d3b9a89777ab
+.DS_Store
